@@ -1,21 +1,30 @@
-﻿{
-    "primaryChannel":  "destiny",
-    "secondaryChannel":  "anythingelse",
-    "priorityChannels":  [
-                             "drt0123",
-                             "tortietest",
-                             "aslanisadorable",
-                             "chan-oz",
-                             "limelimess",
-                             "pizzaw",
-                             "dvdnzl",
-                             "tfwnogf",
-                             "dividenzl",
-                             "deearrteezero",
-                             "wisepie"
-                         ],
-    "primaryImagePath":  "",
-    "secondaryImagePath":  "",
-    "priorityImagePath":  "C:\\Users\\seths\\OneDrive\\Documents\\KickStatusApp\\priority.gif",
-    "priorityGifPath":  "C:\\Users\\seths\\OneDrive\\Documents\\KickStatusApp\\priority.gif"
+{
+  "priorityRules": [
+    {
+      "channels": [
+        "destiny"
+      ],
+      "displayMode": "Text",
+      "displayValue": "D"
+    },
+    {
+      "channels": [
+        "anythingelse"
+      ],
+      "displayMode": "Text",
+      "displayValue": "AE"
+    },
+    {
+      "channels": [],
+      "displayMode": "Gif",
+      "displayValue": ""
+    }
+  ],
+  "openKickOnClick": true,
+  "openBigscreenInChromeOnClick": false,
+  "refreshMinutes": 1.0,
+  "primaryChannel": "destiny",
+  "secondaryChannel": "anythingelse",
+  "priorityChannels": [],
+  "priorityGifPath": ""
 }

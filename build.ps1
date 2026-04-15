@@ -8,12 +8,13 @@ $distDir = Join-Path $repoRoot 'dist'
 $stageDir = Join-Path $distDir 'package'
 $versionPath = Join-Path $repoRoot 'version.json'
 $generatedVersionPath = Join-Path $srcDir 'GeneratedVersion.cs'
+$wpfDir = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF'
 
 $repoOwner = 'matthiasfan55-oss'
 $repoName = 'DestinyStatusDesktop'
 $repoBranch = 'main'
-$exeName = 'DestinyStatusDesktop.exe'
-$packageName = 'DestinyStatusDesktop-package.zip'
+$exeName = 'KickStatusSquare.exe'
+$packageName = 'KickStatusSquare-package.zip'
 
 if (-not (Test-Path $versionPath)) {
     throw "Missing version file at $versionPath"
@@ -26,7 +27,7 @@ if ([string]::IsNullOrWhiteSpace($version)) {
 }
 
 @"
-namespace DestinyStatusDesktop
+namespace KickStatusApp
 {
     internal static class GeneratedVersion
     {
@@ -35,12 +36,14 @@ namespace DestinyStatusDesktop
 }
 "@ | Set-Content -Path $generatedVersionPath -Encoding UTF8
 
-if (Test-Path $stageDir) {
-    Remove-Item -LiteralPath $stageDir -Recurse -Force
+if (Test-Path $distDir) {
+    Get-ChildItem -LiteralPath $distDir -Force | ForEach-Object {
+        Remove-Item -LiteralPath $_.FullName -Recurse -Force
+    }
 }
 
-New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
 New-Item -ItemType Directory -Path $distDir -Force | Out-Null
+New-Item -ItemType Directory -Path $stageDir -Force | Out-Null
 
 $csc = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) {
@@ -50,29 +53,32 @@ if (-not (Test-Path $csc)) {
 & $csc `
     /nologo `
     /target:winexe `
-    /win32icon:"$srcDir\DestinyStatusDesktop.ico" `
+    /win32icon:"$srcDir\KickStatusApp.ico" `
     /out:"$stageDir\$exeName" `
     /reference:System.Windows.Forms.dll `
     /reference:System.Drawing.dll `
     /reference:System.Web.Extensions.dll `
-    "$srcDir\DestinyStatusDesktop.cs" `
+    /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Xaml.dll" `
+    /reference:"$wpfDir\PresentationCore.dll" `
+    /reference:"$wpfDir\WindowsBase.dll" `
+    "$srcDir\KickStatusApp.cs" `
     "$generatedVersionPath"
 
 if ($LASTEXITCODE -ne 0) {
     throw "Compilation failed with exit code $LASTEXITCODE"
 }
 
-Copy-Item "$srcDir\EditDestinyStatusConfig.ps1" (Join-Path $stageDir 'EditDestinyStatusConfig.ps1') -Force
-Copy-Item "$srcDir\DestinyStatusDesktop.ico" (Join-Path $stageDir 'DestinyStatusDesktop.ico') -Force
+Copy-Item "$srcDir\EditKickStatusConfig.ps1" (Join-Path $stageDir 'EditKickStatusConfig.ps1') -Force
+Copy-Item "$srcDir\KickStatusApp.ico" (Join-Path $stageDir 'KickStatusApp.ico') -Force
 Copy-Item "$srcDir\config.json" (Join-Path $stageDir 'config.json') -Force
-Copy-Item (Join-Path $repoRoot 'Edit Destiny Status Channels.cmd') (Join-Path $stageDir 'Edit Destiny Status Channels.cmd') -Force
-Copy-Item (Join-Path $repoRoot 'Run Destiny Status Desktop.vbs') (Join-Path $stageDir 'Run Destiny Status Desktop.vbs') -Force
+Copy-Item (Join-Path $repoRoot 'Edit Kick Status Channels.cmd') (Join-Path $stageDir 'Edit Kick Status Channels.cmd') -Force
+Copy-Item (Join-Path $repoRoot 'Edit Kick Status Channels.vbs') (Join-Path $stageDir 'Edit Kick Status Channels.vbs') -Force
 
 Copy-Item (Join-Path $stageDir $exeName) (Join-Path $distDir $exeName) -Force
-Copy-Item (Join-Path $stageDir 'EditDestinyStatusConfig.ps1') (Join-Path $distDir 'EditDestinyStatusConfig.ps1') -Force
-Copy-Item (Join-Path $stageDir 'Edit Destiny Status Channels.cmd') (Join-Path $distDir 'Edit Destiny Status Channels.cmd') -Force
-Copy-Item (Join-Path $stageDir 'Run Destiny Status Desktop.vbs') (Join-Path $distDir 'Run Destiny Status Desktop.vbs') -Force
-Copy-Item (Join-Path $stageDir 'DestinyStatusDesktop.ico') (Join-Path $distDir 'DestinyStatusDesktop.ico') -Force
+Copy-Item (Join-Path $stageDir 'EditKickStatusConfig.ps1') (Join-Path $distDir 'EditKickStatusConfig.ps1') -Force
+Copy-Item (Join-Path $stageDir 'Edit Kick Status Channels.cmd') (Join-Path $distDir 'Edit Kick Status Channels.cmd') -Force
+Copy-Item (Join-Path $stageDir 'Edit Kick Status Channels.vbs') (Join-Path $distDir 'Edit Kick Status Channels.vbs') -Force
+Copy-Item (Join-Path $stageDir 'KickStatusApp.ico') (Join-Path $distDir 'KickStatusApp.ico') -Force
 Copy-Item (Join-Path $stageDir 'config.json') (Join-Path $distDir 'config.json') -Force
 
 $packagePath = Join-Path $distDir $packageName
@@ -85,7 +91,7 @@ $packageUrl = "https://raw.githubusercontent.com/$repoOwner/$repoName/$repoBranc
 $updateManifest = [ordered]@{
     version = $version
     packageUrl = $packageUrl
-    notes = "Built from $repoName $version"
+    notes = "Kick Status $version"
 } | ConvertTo-Json
 
 $updateManifest | Set-Content -Path (Join-Path $repoRoot 'update.json') -Encoding UTF8

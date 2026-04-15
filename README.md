@@ -1,14 +1,19 @@
 # DestinyStatusDesktop
 
-Small Windows desktop status app for monitoring configured Kick channels and switching the indicator image based on which channel group is online.
+Repository for the Windows Kick status square build.
 
 ## Repo layout
 
-- `src/DestinyStatusDesktop.cs`: WinForms app source
-- `src/EditDestinyStatusConfig.ps1`: settings editor
-- `src/config.json`: fallback default config for first launch
+- `src/KickStatusApp.cs`: WinForms app source
+- `src/EditKickStatusConfig.ps1`: settings editor
+- `src/config.json`: clean fallback defaults for first launch
 - `build.ps1`: builds the app, creates the distributable package, and regenerates `update.json`
-- `dist/`: built executable and update package that the app downloads for self-updates
+- `dist/`: built executable and update package that installed copies download
+
+## Local settings
+
+Installed copies store the real user configuration under `%APPDATA%\KickStatusAppData`.
+That keeps saved channels and image paths outside the repo and outside the install folder.
 
 ## Auto-update flow
 
@@ -18,7 +23,7 @@ The app checks:
 
 If `update.json` contains a newer version than the running build, the app downloads:
 
-- `dist/DestinyStatusDesktop-package.zip`
+- `dist/KickStatusSquare-package.zip`
 
 It then replaces the local install folder and restarts itself.
 
@@ -29,8 +34,8 @@ It then replaces the local install folder and restarts itself.
 3. Run `Build Destiny Status Desktop.cmd`.
 4. Commit and push:
    - source changes
-   - `dist/DestinyStatusDesktop.exe`
-   - `dist/DestinyStatusDesktop-package.zip`
+   - `dist/KickStatusSquare.exe`
+   - `dist/KickStatusSquare-package.zip`
    - `update.json`
 
 Once those files are on `main`, installed copies will update themselves automatically.
