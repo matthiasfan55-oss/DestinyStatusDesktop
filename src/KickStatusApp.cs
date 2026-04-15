@@ -133,6 +133,7 @@ namespace KickStatusApp
     {
         private const string UpdateManifestApiUrl = "https://api.github.com/repos/matthiasfan55-oss/DestinyStatusDesktop/contents/update.json?ref=main";
         private const string UpdateManifestRawUrl = "https://raw.githubusercontent.com/matthiasfan55-oss/DestinyStatusDesktop/main/update.json";
+        private const string UpdatePackageApiUrl = "https://api.github.com/repos/matthiasfan55-oss/DestinyStatusDesktop/contents/dist/KickStatusSquare-package.zip?ref=main";
         private const string GitHubUserAgent = "KickStatusSquare-Updater";
 
         private readonly string appDir;
@@ -1120,11 +1121,7 @@ namespace KickStatusApp
                 Directory.CreateDirectory(tempRoot);
 
                 string packagePath = Path.Combine(tempRoot, "KickStatusSquare-package.zip");
-                using (var client = new WebClient())
-                {
-                    client.Headers[HttpRequestHeader.UserAgent] = GitHubUserAgent;
-                    client.DownloadFile(manifest.packageUrl + "?v=" + Uri.EscapeDataString(manifest.version), packagePath);
-                }
+                DownloadUpdatePackage(manifest, packagePath);
 
                 string updaterScriptPath = WriteUpdaterScript(tempRoot);
                 var startInfo = new ProcessStartInfo
@@ -1169,6 +1166,44 @@ namespace KickStatusApp
             catch
             {
                 updateInProgress = false;
+            }
+        }
+
+        private void DownloadUpdatePackage(AppUpdateManifest manifest, string packagePath)
+        {
+            string versionNonce = manifest != null && !string.IsNullOrWhiteSpace(manifest.version)
+                ? Uri.EscapeDataString(manifest.version)
+                : DateTime.UtcNow.Ticks.ToString();
+
+            using (var client = new WebClient())
+            {
+                client.Headers[HttpRequestHeader.UserAgent] = GitHubUserAgent;
+
+                try
+                {
+                    client.Headers[HttpRequestHeader.Accept] = "application/vnd.github+json";
+                    string apiResponse = client.DownloadString(UpdatePackageApiUrl + "&v=" + versionNonce);
+                    var contentResponse = serializer.Deserialize<GitHubContentResponse>(apiResponse);
+                    if (contentResponse != null &&
+                        string.Equals(contentResponse.encoding, "base64", StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(contentResponse.content))
+                    {
+                        string base64 = contentResponse.content.Replace("\r", "").Replace("\n", "");
+                        File.WriteAllBytes(packagePath, Convert.FromBase64String(base64));
+                        return;
+                    }
+                }
+                catch
+                {
+                }
+
+                if (manifest == null || string.IsNullOrWhiteSpace(manifest.packageUrl))
+                {
+                    throw new InvalidOperationException("Update manifest did not include a package URL.");
+                }
+
+                client.Headers[HttpRequestHeader.Accept] = "application/octet-stream";
+                client.DownloadFile(manifest.packageUrl + "?v=" + versionNonce, packagePath);
             }
         }
 
