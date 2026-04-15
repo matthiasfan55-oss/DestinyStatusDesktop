@@ -102,6 +102,12 @@ namespace KickStatusApp
         public string notes { get; set; }
     }
 
+    public class GitHubContentResponse
+    {
+        public string content { get; set; }
+        public string encoding { get; set; }
+    }
+
     internal static class NativeMethods
     {
         [DllImport("user32.dll")]
@@ -125,7 +131,8 @@ namespace KickStatusApp
 
     public class StatusForm : Form
     {
-        private const string UpdateManifestUrl = "https://raw.githubusercontent.com/matthiasfan55-oss/DestinyStatusDesktop/main/update.json";
+        private const string UpdateManifestApiUrl = "https://api.github.com/repos/matthiasfan55-oss/DestinyStatusDesktop/contents/update.json?ref=main";
+        private const string UpdateManifestRawUrl = "https://raw.githubusercontent.com/matthiasfan55-oss/DestinyStatusDesktop/main/update.json";
         private const string GitHubUserAgent = "KickStatusSquare-Updater";
 
         private readonly string appDir;
@@ -1034,7 +1041,7 @@ namespace KickStatusApp
                 using (var client = new WebClient())
                 {
                     client.Headers[HttpRequestHeader.UserAgent] = GitHubUserAgent;
-                    string manifestJson = client.DownloadString(UpdateManifestUrl + "?v=" + DateTime.UtcNow.Ticks);
+                    string manifestJson = DownloadManifestJson(client);
                     var manifest = serializer.Deserialize<AppUpdateManifest>(manifestJson);
                     if (manifest == null ||
                         string.IsNullOrWhiteSpace(manifest.version) ||
@@ -1054,6 +1061,31 @@ namespace KickStatusApp
             catch
             {
             }
+        }
+
+        private string DownloadManifestJson(WebClient client)
+        {
+            string nonce = DateTime.UtcNow.Ticks.ToString();
+
+            try
+            {
+                client.Headers[HttpRequestHeader.Accept] = "application/vnd.github+json";
+                string apiResponse = client.DownloadString(UpdateManifestApiUrl + "&v=" + nonce);
+                var contentResponse = serializer.Deserialize<GitHubContentResponse>(apiResponse);
+                if (contentResponse != null &&
+                    string.Equals(contentResponse.encoding, "base64", StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(contentResponse.content))
+                {
+                    string base64 = contentResponse.content.Replace("\r", "").Replace("\n", "");
+                    return System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+                }
+            }
+            catch
+            {
+            }
+
+            client.Headers[HttpRequestHeader.Accept] = "application/json";
+            return client.DownloadString(UpdateManifestRawUrl + "?v=" + nonce);
         }
 
         private static bool IsNewerVersion(string remoteVersion, string currentVersion)
